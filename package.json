@@ -1,0 +1,16 @@
+{
+  "name": "backend-banger",
+  "version": "1.0.0",
+  "description": "industry grade backend project",
+  "keywords": [
+    "backend",
+    "javascript"
+  ],
+  "license": "ISC",
+  "author": "Priyanshu yadav",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
