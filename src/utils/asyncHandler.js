@@ -1,11 +1,11 @@
-const asyncHandeler = (requestHandler)=> {
+const asyncHandler = (requestHandler)=> {
     return (req,res,next)=>{
         Promise.resolve(requestHandler(req,res,next)).catch((err)=>
             next(err))
     }
 }
 
-export {asyncHandeler}
+export {asyncHandler}
 
 //new try and catch method for async functions
 
