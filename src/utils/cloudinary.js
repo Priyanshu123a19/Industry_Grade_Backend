@@ -14,8 +14,10 @@ import fs from 'fs';
                 resource_type: 'auto'
             })
             //file has been uploaded successfully
-            console.log("file has been uploaded successfully", response.url);
-            return response
+            //u can remove this console log and the response after testing the code once and seeing that files are uploaded
+            //console.log("file has been uploaded successfully", response.url);
+            fs.unlinkSync(localFilePath);
+            return response;
         }catch(error){
             fs.unlinkSync(localFilePath);
             //removing that file from our local storage
