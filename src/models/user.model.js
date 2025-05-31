@@ -57,7 +57,7 @@ userSchema.methods.isPasswordCorrect= async function(password){
     return await bcrypt.compare(password,this.password);
 }
 
-userSchema.methods.createJWT = function(){
+userSchema.methods.generateAccessToken = function(){
     return jwt.sign({
         //the this method have the access to the database model so u can extract these info from the model and put them in the token
         _id: this._id,
@@ -67,7 +67,7 @@ userSchema.methods.createJWT = function(){
     },
     process.env.ACCESS_TOKEN_SECRET,
     {
-    expiresIN: process.env.ACCESS_TOKEN_EXPIRY
+    expiresIn: process.env.ACCESS_TOKEN_EXPIRY
     })
 }
 
@@ -78,7 +78,7 @@ userSchema.methods.generateRefreshToken = function(){
     },
     process.env.REFRESH_TOKEN_SECRET,
     {
-    expiresIN: process.env.REFRESH_TOKEN_EXPIRY
+    expiresIn: process.env.REFRESH_TOKEN_EXPIRY
     })
 }
 
