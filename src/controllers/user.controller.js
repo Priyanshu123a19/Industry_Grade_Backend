@@ -3,6 +3,7 @@ import {ApiError} from '../utils/ApiError.js';
 import {User} from '../models/user.model.js';
 import {uploadOnCloudinary} from '../utils/cloudinary.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
+import e from 'express';
 
 //writing a saperate function for refresh and access token handeling
 const generateAcessAndRefreshToken = async (userId)=> {
@@ -359,6 +360,89 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
     )
 
 })
+
+const getUserChannelProfile =asyncHandler(async (req, res) => {
+    //first get the user from the req section params
+    const {username} = req.params;
+
+    //validating that the username is provided or not
+    if(!username){
+        throw new ApiError(400, "Username is required");
+    }
+
+    //now here we can find the number of subscribers and the channels the user has subscribed to
+    //here we will be using the aggregation pipeline to get the user details along with the subscribers count
+
+    const channel=await User.aggregate([
+        {
+            $match: { username: username.toLowerCase() }
+        },
+        {
+            $lookup: {
+                from: "subscriptions", //the name of the collection in the database
+                localField: "_id", //the field in the user collection that we want to match with the foreign field
+                foreignField: "subscriber", //the field in the subscription collection in which we want to match the local field
+                as: "subscribers" //the name of the field to be added in the user object
+            }
+        },
+        {
+            $lookup: {
+                from: "subscriptions",//the name of the collection in the database
+                localField: "_id",//the field in the user collection that we want to match with the foreign field
+                foreignField: "channel",//the field in the subscription collection in which we want to match the local field
+                as: "subscribedTo" //the name of the field to be added in the user object
+            }
+        },
+        //adding the third stage to add these fiels in the schema containing the localfiels as new fields
+        {
+            $addFields: {
+                subscribersCount: { $size: "$subscribers" }, //counting the number of subscribers
+                channelsSubscribedToCount: { $size: "$subscribedTo" },
+                //now getting the info that wather the current user is subscribed to the channel or not
+                isSubscribed: {
+                    $cond: {
+                        //here we will be checking that if the user id is present in the subscribers array or not
+                        //the $in operator is used to check if the user id is present in the subscribers array or not
+                        if: { $in: [req.user?._id , "$subscribers.subscriber"] },
+                        then: true, //then the user is subscribed to the channel
+                        else: false //else the user is not subscribed to the channel
+                    }
+                }
+            }
+        },
+        //adding the final stage to just send the info that is required to the user
+        //basically the finally joint object fields that we want to send to the user
+        {
+            $project: {
+                fullName: 1,
+                username: 1,
+                subscribersCount: 1,
+                channelsSubscribedToCount: 1,
+                isSubscribed: 1,
+                avatar: 1,
+                coverimage: 1,
+                email: 1,
+            }
+        }
+    ])
+
+    //finally validating that we got the info that we were trying to get or not
+    if(!channel?.channel.length){
+        throw new ApiError(404, "Channel not found");
+    }
+
+    //finally here we will return the response with the channel info
+    return res.status(200).json(
+        new ApiResponse(
+            200, 
+            channel[0], //since we are using the aggregation pipeline it will return an array of objects
+            //but in our case we are only getting one object so we will return the first object
+            //if u get more than one object in some other cases then u can use the same logic and select the object required out of this aggrigation response array and use it
+            "Channel profile fetched successfully"
+        )
+    )
+
+});
 
 export {
     registeruser,
