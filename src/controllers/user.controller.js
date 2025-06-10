@@ -159,7 +159,7 @@ const loginUser = asyncHandler(async (req, res) => {
 )
 
 
-});
+})
 
 const logoutUser = asyncHandler(async (req, res) => {
     //here we have the access for the user object from the auth middleware
@@ -186,7 +186,7 @@ const logoutUser = asyncHandler(async (req, res) => {
     )
     
 
-});
+})
 
 const refreshAccessToken = asyncHandler(async (req, res) => {
     //here we will handle the refresh token and generate a new access token
@@ -442,8 +442,61 @@ const getUserChannelProfile =asyncHandler(async (req, res) => {
         )
     )
 
-});
+})
 
+const getWatchHistory = asyncHandler(async (req, res) => {
+    //so remember one thing that when we send the mogdb id in the aggregation pipeline
+    //we have to convert it to the object id using the mongoose.Types.ObjectId method
+
+    const user=await User.aggregate([
+        {
+            $match: { _id: new mongoose.Types.ObjectId(req.user._id) }
+        },
+        {
+            //here we will use the lookup operator to join the watch history collection with the user collection
+            $lookup: {
+                from : "videos",
+                localField: "watchHistory", //the field in the user collection that we want to match with the foreign field
+                foreignField: "_id", //the field in the video collection in which we want to match the local field
+                as: "watchHistory",
+                //here now we will be adding the nested pipline to get the details of the owner of the video
+                pipeline:[
+                    {
+                        //here we will be jpining the video details with the user that is the owner of the video
+                        $lookup: {
+                            from: "users", //the name of the collection in the database
+                            localField: "owner", //the field in the video collection that we want to match with the foreign field
+                            foreignField: "_id", //the field in the user collection in which we want to match the local field
+                            as: "owner",
+                            //furhter we will be adding the pipeline to get the owner details to have a proper projection 
+                            pipeline: [
+                                {
+                                    $project: {
+                                        fullName: 1,
+                                        username: 1,
+                                        avatar: 1
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        //here i am trying to get the retrived owner details to be injected as a variable not as an array
+                        $addFields: {
+                            owner: {
+                                $first: "$owner" //this will get the first element of the owner array
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    ])
+    //here we will be sending the response with the user watch history
+    return res.status(200).json(
+        new ApiResponse(200, user[0].watchHistory, "User watch history fetched successfully")
+    )
+})
 export {
     registeruser,
     loginUser,
@@ -453,5 +506,7 @@ export {
     getCurrentUser,
     updateAccountDetails,
     updateUserAvatar,
-    updateUserCoverImage
+    updateUserCoverImage,
+    getUserChannelProfile,
+    getWatchHistory
 }

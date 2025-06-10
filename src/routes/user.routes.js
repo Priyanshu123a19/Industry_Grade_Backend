@@ -1,5 +1,13 @@
 import {Router} from "express";
-import { registeruser } from "../controllers/user.controller.js";
+import { changeCurrentPassword, 
+    getCurrentUser, 
+    getUserChannelProfile, 
+    getWatchHistory, 
+    registeruser, 
+    updateAccountDetails, 
+    updateUserAvatar, 
+    updateUserCoverImage 
+} from "../controllers/user.controller.js";
 //importing the middleware to be used
 import {upload} from "../middlewares/multer.middleware.js";
 import { loginUser } from "../controllers/user.controller.js";
@@ -29,5 +37,12 @@ router.route("/login").post( loginUser)
 router.route("/logout").post(verifyJWT, logoutUser);
 //mp veriyJwt because we are fetching the user using the refresh token id so no need of req.user
 router.route("/refresh-token").post(refreshAccessToken)
+router.route("/change-password").post(verifyJWT, changeCurrentPassword);
+router.route("/current-user").post(verifyJWT,getCurrentUser);
+router.route("/update_account").patch(verifyJWT,updateAccountDetails)   
+router.route("/avatar").patch(verifyJWT, upload.single("avatar"), updateUserAvatar);
+router.route("/cover-image").patch(verifyJWT, upload.single("coverImage"), updateUserCoverImage);
+router.route("/c/:username").get(verifyJWT, getUserChannelProfile);
+router.route("/history").get(verifyJWT, getWatchHistory);
 
 export default router;
